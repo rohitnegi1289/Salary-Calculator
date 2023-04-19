@@ -1,0 +1,1182 @@
+Sub calculate_salary()
+
+'Declaring Monthly and Annual Variables
+
+Dim offer, basic, sbns, hra, ga, sa, gross, pfwage, eepf, eesic, elwf, ctc, empepf, _
+empesic, emplwf, pt, nth As Long
+
+Dim abasic, asbns, ahra, aga, asa, agross, aeepf, aeesic, aelwf, actc, aempepf, _
+aempesic, aemplwf, apt, anth, check As Long
+
+'Declaring other variables
+
+Dim salarytype, freq, emptype, location, city, state As String
+
+'Declaring Sheets
+
+Dim ws1, ws2 As Worksheet
+
+Set ws1 = Sheets("Salary Calculator")
+Set ws2 = Sheets("Min Wages")
+
+
+
+'______________x____________________x______________________X______________________X
+
+
+'setting variable values
+
+If VarType(Range("F6").Value) <> 8 Then
+    offer = Range("F6").Value
+Else
+    MsgBox "Please Enter a Valid offered Salary", vbOKOnly, "PHFL - Salary Calculator 1.0"
+    Exit Sub
+End If
+
+salarytype = Range("F7").Value
+freq = Range("F8").Value
+emptype = Range("L6").Value
+location = Range("L7")
+city = Range("L8").Value
+
+
+
+' First Reset all values to Zero
+
+Range("I14:L43") = 0
+hra = 0
+ga = 0
+sa = 0
+
+
+
+' checking if state or location is selected or not
+
+If location = "Select State..." Then
+    MsgBox "Please Select a state to calculate salary", vbOKOnly, "PHFL - Salary Calculator 1.0"
+    Exit Sub
+ElseIf location = "Select Location..." Then
+    MsgBox "Please Select a location to calculate salary", vbOKOnly, "PHFL - Salary Calculator 1.0"
+    Exit Sub
+ElseIf location = "Kerala" And city = "Select City..." Then
+    MsgBox "Please Select a City to calculate salary", vbOKOnly, "PHFL - Salary Calculator 1.0"
+    Exit Sub
+End If
+
+
+' setting state
+
+If ws1.OptionButton1.Value = True Then
+    state = location
+ElseIf ws1.OptionButton2.Value = True Then
+    state = Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False)
+End If
+
+
+' Checking if there is any value in the offered field
+
+If offer = 0 Then
+    Dim answer As Integer
+    If ws1.OptionButton2 = True Then
+        answer = MsgBox("You are about to calculate Minimum '" & salarytype & "' Salary for the location of '" _
+        & location & "'. Do You wish to continue ?", _
+        vbQuestion + vbYesNo + vbDefaultButton2, "PHFL - Salary Calculator 1.0")
+        If answer = vbNo Then
+            Exit Sub
+        End If
+    ElseIf ws1.OptionButton1 = True Then
+        answer = MsgBox("You are about to calculate Minimum '" & salarytype & "' Salary for the state of " _
+        & location & ". Do You wish to continue ?", _
+        vbQuestion + vbYesNo + vbDefaultButton2, "PHFL - Salary Calculator 1.0")
+        If answer = vbNo Then
+            Exit Sub
+        End If
+    End If
+End If
+
+
+'_______________x___________________x________________X_________________x___________________x_______________
+
+' Calculation of basic salary
+
+If Sheets("salary calculator").OptionButton1 = True And emptype = "Semi-Skilled" And location <> "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(location, ws2.Range("A:E"), 4, False)
+ElseIf Sheets("salary calculator").OptionButton1 = True And emptype = "Skilled" And location <> "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(location, ws2.Range("A:E"), 5, False)
+ElseIf Sheets("salary calculator").OptionButton1 = True And emptype = "Semi-Skilled" And location = "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(city, ws2.Range("B:E"), 3, False)
+ElseIf Sheets("salary calculator").OptionButton1 = True And emptype = "Skilled" And location = "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(city, ws2.Range("B:E"), 4, False)
+ElseIf Sheets("salary calculator").OptionButton2 = True And emptype = "Semi-Skilled" And Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False) <> "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False), ws2.Range("A:E"), 4, False)
+ElseIf Sheets("salary calculator").OptionButton2 = True And emptype = "Skilled" And Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False) <> "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False), ws2.Range("A:E"), 5, False)
+ElseIf Sheets("salary calculator").OptionButton2 = True And emptype = "Semi-Skilled" And Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False) = "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(location, ws2.Range("C:E"), 2, False)
+ElseIf Sheets("salary calculator").OptionButton2 = True And emptype = "Skilled" And Application.WorksheetFunction.VLookup(location, ws2.Range("W:X"), 2, False) = "Kerala" Then
+    basic = Application.WorksheetFunction.VLookup(location, ws2.Range("C:E"), 3, False)
+End If
+
+
+' calculation of one time LWF
+
+elwf = 123456
+On Error Resume Next
+    elwf = Application.WorksheetFunction.VLookup(state, ws2.Range("P:R"), 2, False)
+    emplwf = Application.WorksheetFunction.VLookup(state, ws2.Range("P:R"), 3, False)
+
+
+If elwf = 123456 Then
+    elwf = 0
+    emplwf = 0
+End If
+
+
+
+
+'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+
+'_____________x__________x______________x_____________X________________x_____________X_______
+sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+
+gross = basic + sbns + hra + ga + sa
+
+If basic > 15000 Then
+    pfwage = basic
+Else
+    pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+End If
+
+eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    eesic = 0
+Else
+    eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+End If
+
+ctc = gross + eepf + eesic + elwf
+
+empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    empesic = 0
+Else
+    empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+End If
+
+If state = "Tamil Nadu" Then
+    pt = 208
+Else
+    pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+End If
+
+nth = gross - empepf - empesic - emplwf - pt
+
+' annual component
+
+abasic = basic * 12
+asbns = sbns * 12
+ahra = hra * 12
+aga = ga * 12
+asa = sa * 12
+agross = gross * 12
+aeepf = eepf * 12
+aeesic = eesic * 12
+aelwf = elwf * 12
+actc = ctc * 12
+aempepf = empepf * 12
+aempesic = empesic * 12
+aemplwf = emplwf * 12
+apt = pt * 12
+anth = nth * 12
+
+' setting variable for NTH, Gross, CTC and Monthly or Annual
+
+If salarytype = "Net Take Home" And freq = "Monthly" Then
+    check = nth
+ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+    check = anth
+ElseIf salarytype = "Gross" And freq = "Monthly" Then
+    check = gross
+ElseIf salarytype = "Gross" And freq = "Annual" Then
+    check = agross
+ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+    check = ctc
+ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+    check = actc
+End If
+
+
+'_________x______________x________________x____________________x____________x___________
+
+
+' calculation of hra
+
+
+Do While offer > check And hra < Application.WorksheetFunction.RoundDown(basic / 2, 0)
+    
+    hra = hra + 1
+    gross = basic + sbns + hra + ga + sa
+    agross = gross * 12
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    actc = ctc * 12
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    anth = nth * 12
+    
+    'setting check value
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+Loop
+
+
+If state = "Maharashtra" And hra < basic * 5 / 100 Then
+    hra = Application.WorksheetFunction.RoundDown(basic * 5 / 100, 0)
+    gross = basic + sbns + hra + ga + sa
+    agross = gross * 12
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    actc = ctc * 12
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    anth = nth * 12
+
+ElseIf state = "West Bengal" And hra < basic * 5 / 100 Then
+    hra = Application.WorksheetFunction.RoundDown(basic * 5 / 100, 0)
+    gross = basic + sbns + hra + ga + sa
+    agross = gross * 12
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    ctc = gross + eepf + eesic + elwf
+    actc = ctc * 12
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    anth = nth * 12
+End If
+
+
+
+
+'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+
+'_____________x__________x______________x_____________X________________x_____________X_______
+sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+
+gross = basic + sbns + hra + ga + sa
+
+If basic > 15000 Then
+    pfwage = basic
+Else
+    pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+End If
+
+eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    eesic = 0
+Else
+    eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+End If
+
+ctc = gross + eepf + eesic + elwf
+
+empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    empesic = 0
+Else
+    empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+End If
+
+If state = "Tamil Nadu" Then
+    pt = 208
+Else
+    pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+End If
+
+nth = gross - empepf - empesic - emplwf - pt
+
+
+'Calculating annual component
+
+abasic = basic * 12
+asbns = sbns * 12
+ahra = hra * 12
+aga = ga * 12
+asa = sa * 12
+agross = gross * 12
+aeepf = eepf * 12
+aeesic = eesic * 12
+aelwf = elwf * 12
+actc = ctc * 12
+aempepf = empepf * 12
+aempesic = empesic * 12
+aemplwf = emplwf * 12
+apt = pt * 12
+anth = nth * 12
+
+' setting variable for NTH, Gross, CTC and Monthly or Annual
+
+If salarytype = "Net Take Home" And freq = "Monthly" Then
+    check = nth
+ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+    check = anth
+ElseIf salarytype = "Gross" And freq = "Monthly" Then
+    check = gross
+ElseIf salarytype = "Gross" And freq = "Annual" Then
+    check = agross
+ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+    check = ctc
+ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+    check = actc
+End If
+'_________x______________x________________x____________________x____________x___________
+
+' Calculating General Allowance
+
+
+Do While offer > check And ga < basic
+    ga = ga + 1
+    gross = basic + sbns + hra + ga + sa
+    agross = gross * 12
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    actc = ctc * 12
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    anth = nth * 12
+    
+    'setting check value
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+Loop
+
+'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+
+'_____________x__________x______________x_____________X________________x_____________X_______
+sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+
+gross = basic + sbns + hra + ga + sa
+
+
+If basic > 15000 Then
+    pfwage = basic
+Else
+    pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+End If
+
+
+eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    eesic = 0
+Else
+    eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+End If
+
+ctc = gross + eepf + eesic + elwf
+
+empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    empesic = 0
+Else
+    empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+End If
+
+
+If state = "Tamil Nadu" Then
+    pt = 208
+Else
+    pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+End If
+
+nth = gross - empepf - empesic - emplwf - pt
+
+'Calculating annual component
+
+abasic = basic * 12
+asbns = sbns * 12
+ahra = hra * 12
+aga = ga * 12
+asa = sa * 12
+agross = gross * 12
+aeepf = eepf * 12
+aeesic = eesic * 12
+aelwf = elwf * 12
+actc = ctc * 12
+aempepf = empepf * 12
+aempesic = empesic * 12
+aemplwf = emplwf * 12
+apt = pt * 12
+anth = nth * 12
+
+
+' setting variable for NTH, Gross, CTC and Monthly or Annual
+
+If salarytype = "Net Take Home" And freq = "Monthly" Then
+    check = nth
+ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+    check = anth
+ElseIf salarytype = "Gross" And freq = "Monthly" Then
+    check = gross
+ElseIf salarytype = "Gross" And freq = "Annual" Then
+    check = agross
+ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+    check = ctc
+ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+    check = actc
+   
+End If
+'_________x______________x________________x____________________x____________x___________
+
+' Calculating Special Allowance
+
+Do While offer > check And sa < basic
+    sa = sa + 1
+    gross = basic + sbns + hra + ga + sa
+    agross = gross * 12
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    actc = ctc * 12
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    nth = gross - empepf - empesic - emplwf - pt
+    anth = nth * 12
+    
+    'setting check value
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+Loop
+
+
+'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+
+'_____________x__________x______________x_____________X________________x_____________X_______
+sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+
+
+gross = basic + sbns + hra + ga + sa
+
+
+If basic > 15000 Then
+    pfwage = basic
+Else
+    pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+End If
+
+
+eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+
+If gross > 21000 Then
+    eesic = 0
+Else
+    eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+End If
+
+ctc = gross + eepf + eesic + elwf
+
+empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+
+If gross > 21000 Then
+    empesic = 0
+Else
+    empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+End If
+
+If state = "Tamil Nadu" Then
+    pt = 208
+Else
+    pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+End If
+
+nth = gross - empepf - empesic - emplwf - pt
+
+'Calculating annual component
+
+abasic = basic * 12
+asbns = sbns * 12
+ahra = hra * 12
+aga = ga * 12
+asa = sa * 12
+agross = gross * 12
+aeepf = eepf * 12
+aeesic = eesic * 12
+aelwf = elwf * 12
+actc = ctc * 12
+aempepf = empepf * 12
+aempesic = empesic * 12
+aemplwf = emplwf * 12
+apt = pt * 12
+anth = nth * 12
+
+
+' setting variable for NTH, Gross, CTC and Monthly or Annual
+
+If salarytype = "Net Take Home" And freq = "Monthly" Then
+    check = nth
+ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+    check = anth
+ElseIf salarytype = "Gross" And freq = "Monthly" Then
+    check = gross
+ElseIf salarytype = "Gross" And freq = "Annual" Then
+    check = agross
+ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+    check = ctc
+ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+    check = actc
+End If
+'_________x______________x________________x____________________x____________x___________
+
+
+' To Check if offer is still greater then check
+
+
+Do While offer > check
+    basic = basic + 1
+    basic = Application.WorksheetFunction.Ceiling(basic, 100)
+    '_____________x__________x______________x_____________X________________x_____________X_______
+    sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+    hra = 0
+    ga = 0
+    sa = 0
+    
+    gross = basic + sbns + hra + ga + sa
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    ctc = gross + eepf + eesic + elwf
+    
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    
+    ' annual component
+    
+    abasic = basic * 12
+    asbns = sbns * 12
+    ahra = hra * 12
+    aga = ga * 12
+    asa = sa * 12
+    agross = gross * 12
+    aeepf = eepf * 12
+    aeesic = eesic * 12
+    aelwf = elwf * 12
+    actc = ctc * 12
+    aempepf = empepf * 12
+    aempesic = empesic * 12
+    aemplwf = emplwf * 12
+    apt = pt * 12
+    anth = nth * 12
+    
+    ' setting variable for NTH, Gross, CTC and Monthly or Annual
+    
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+    '_________x______________x________________x____________________x____________x___________
+
+    'Recalculation of HRA
+    
+    Do While offer > check And hra < Application.WorksheetFunction.RoundDown(basic / 2, 0)
+    
+        hra = hra + 1
+        gross = basic + sbns + hra + ga + sa
+        agross = gross * 12
+        
+        If gross > 21000 Then
+            eesic = 0
+        Else
+            eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+        End If
+        
+        ctc = gross + eepf + eesic + elwf
+        actc = ctc * 12
+        
+        If gross > 21000 Then
+            empesic = 0
+        Else
+            empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+        End If
+        
+        If state = "Tamil Nadu" Then
+            pt = 208
+        Else
+            pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+        End If
+        
+        nth = gross - empepf - empesic - emplwf - pt
+        anth = nth * 12
+        
+        'setting check value
+        If salarytype = "Net Take Home" And freq = "Monthly" Then
+            check = nth
+        ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+            check = anth
+        ElseIf salarytype = "Gross" And freq = "Monthly" Then
+            check = gross
+        ElseIf salarytype = "Gross" And freq = "Annual" Then
+            check = agross
+        ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+            check = ctc
+        ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+            check = actc
+        End If
+    Loop
+
+    'Recalculation Template
+    
+    '_____________x__________x______________x_____________X________________x_____________X_______
+    sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+    
+    gross = basic + sbns + hra + ga + sa
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    
+    
+    'Calculating annual component
+    
+    abasic = basic * 12
+    asbns = sbns * 12
+    ahra = hra * 12
+    aga = ga * 12
+    asa = sa * 12
+    agross = gross * 12
+    aeepf = eepf * 12
+    aeesic = eesic * 12
+    aelwf = elwf * 12
+    actc = ctc * 12
+    aempepf = empepf * 12
+    aempesic = empesic * 12
+    aemplwf = emplwf * 12
+    apt = pt * 12
+    anth = nth * 12
+    
+    ' setting variable for NTH, Gross, CTC and Monthly or Annual
+    
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+    '_________x______________x________________x____________________x____________x___________
+
+    ' Calculating General Allowance
+
+    
+    Do While offer > check And ga < basic
+        ga = ga + 1
+        gross = basic + sbns + hra + ga + sa
+        agross = gross * 12
+        
+        If basic > 15000 Then
+            pfwage = basic
+        Else
+            pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+        End If
+        
+        eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+        
+        If gross > 21000 Then
+            eesic = 0
+        Else
+            eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+        End If
+        
+        ctc = gross + eepf + eesic + elwf
+        actc = ctc * 12
+        empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+        
+        If gross > 21000 Then
+            empesic = 0
+        Else
+            empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+        End If
+        
+        
+        If state = "Tamil Nadu" Then
+            pt = 208
+        Else
+            pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+        End If
+        
+        nth = gross - empepf - empesic - emplwf - pt
+        anth = nth * 12
+        
+        'setting check value
+        If salarytype = "Net Take Home" And freq = "Monthly" Then
+            check = nth
+        ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+            check = anth
+        ElseIf salarytype = "Gross" And freq = "Monthly" Then
+            check = gross
+        ElseIf salarytype = "Gross" And freq = "Annual" Then
+            check = agross
+        ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+            check = ctc
+        ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+            check = actc
+        End If
+    Loop
+    
+    'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+    
+    '_____________x__________x______________x_____________X________________x_____________X_______
+    sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+    
+    gross = basic + sbns + hra + ga + sa
+    
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    
+    'Calculating annual component
+    
+    abasic = basic * 12
+    asbns = sbns * 12
+    ahra = hra * 12
+    aga = ga * 12
+    asa = sa * 12
+    agross = gross * 12
+    aeepf = eepf * 12
+    aeesic = eesic * 12
+    aelwf = elwf * 12
+    actc = ctc * 12
+    aempepf = empepf * 12
+    aempesic = empesic * 12
+    aemplwf = emplwf * 12
+    apt = pt * 12
+    anth = nth * 12
+    
+    
+    ' setting variable for NTH, Gross, CTC and Monthly or Annual
+    
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+       
+    End If
+    '_________x______________x________________x____________________x____________x___________
+    
+    ' Calculating Special Allowance
+    
+    Do While offer > check And sa < basic
+        sa = sa + 1
+        gross = basic + sbns + hra + ga + sa
+        agross = gross * 12
+        
+        If basic > 15000 Then
+            pfwage = basic
+        Else
+            pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+        End If
+        
+        eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+        
+        If gross > 21000 Then
+            eesic = 0
+        Else
+            eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+        End If
+        
+        ctc = gross + eepf + eesic + elwf
+        actc = ctc * 12
+        empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+        
+        If gross > 21000 Then
+            empesic = 0
+        Else
+            empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+        End If
+        
+        If state = "Tamil Nadu" Then
+            pt = 208
+        Else
+            pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+        End If
+        nth = gross - empepf - empesic - emplwf - pt
+        anth = nth * 12
+        
+        'setting check value
+        If salarytype = "Net Take Home" And freq = "Monthly" Then
+            check = nth
+        ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+            check = anth
+        ElseIf salarytype = "Gross" And freq = "Monthly" Then
+            check = gross
+        ElseIf salarytype = "Gross" And freq = "Annual" Then
+            check = agross
+        ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+            check = ctc
+        ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+            check = actc
+        End If
+    Loop
+    
+    
+    'initiating all varibles again (Fix Template, needs to be calculated after every variable calculation)
+    
+    '_____________x__________x______________x_____________X________________x_____________X_______
+    sbns = Application.WorksheetFunction.Round(basic * 8.33 / 100, 0)
+    
+    
+    gross = basic + sbns + hra + ga + sa
+    
+    
+    If basic > 15000 Then
+        pfwage = basic
+    Else
+        pfwage = Application.WorksheetFunction.Min(basic + ga + sa, 15000)
+    End If
+    
+    
+    eepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    
+    If gross > 21000 Then
+        eesic = 0
+    Else
+        eesic = Application.WorksheetFunction.RoundUp(gross * 3.25 / 100, 0)
+    End If
+    
+    ctc = gross + eepf + eesic + elwf
+    
+    empepf = Application.WorksheetFunction.Round(pfwage * 12 / 100, 0)
+    
+    If gross > 21000 Then
+        empesic = 0
+    Else
+        empesic = Application.WorksheetFunction.RoundUp(gross * 0.75 / 100, 0)
+    End If
+    
+    If state = "Tamil Nadu" Then
+        pt = 208
+    Else
+        pt = Application.WorksheetFunction.SumIfs(ws2.Range("N:N"), ws2.Range("K:K"), state, ws2.Range("L:L"), "<" & gross, ws2.Range("M:M"), ">" & gross)
+    End If
+    
+    nth = gross - empepf - empesic - emplwf - pt
+    
+    'Calculating annual component
+    
+    abasic = basic * 12
+    asbns = sbns * 12
+    ahra = hra * 12
+    aga = ga * 12
+    asa = sa * 12
+    agross = gross * 12
+    aeepf = eepf * 12
+    aeesic = eesic * 12
+    aelwf = elwf * 12
+    actc = ctc * 12
+    aempepf = empepf * 12
+    aempesic = empesic * 12
+    aemplwf = emplwf * 12
+    apt = pt * 12
+    anth = nth * 12
+    
+    
+    ' setting variable for NTH, Gross, CTC and Monthly or Annual
+    
+    If salarytype = "Net Take Home" And freq = "Monthly" Then
+        check = nth
+    ElseIf salarytype = "Net Take Home" And freq = "Annual" Then
+        check = anth
+    ElseIf salarytype = "Gross" And freq = "Monthly" Then
+        check = gross
+    ElseIf salarytype = "Gross" And freq = "Annual" Then
+        check = agross
+    ElseIf salarytype = "Cost To Company" And freq = "Monthly" Then
+        check = ctc
+    ElseIf salarytype = "Cost To Company" And freq = "Annual" Then
+        check = actc
+    End If
+    '_________x______________x________________x____________________x____________x___________
+Loop
+
+
+
+'Outputting Values
+'Monthly
+
+ws1.Range("I14").Value = basic
+ws1.Range("I16").Value = sbns
+ws1.Range("I18").Value = hra
+ws1.Range("I20").Value = ga
+ws1.Range("I22").Value = sa
+ws1.Range("I24").Value = gross
+ws1.Range("I26").Value = eepf
+ws1.Range("I28").Value = eesic
+ws1.Range("I30").Value = elwf
+ws1.Range("I32").Value = ctc
+ws1.Range("I34").Value = empepf
+ws1.Range("I36").Value = empesic
+ws1.Range("I38").Value = emplwf
+ws1.Range("I40").Value = pt
+ws1.Range("I42").Value = nth
+
+'annual
+
+ws1.Range("L14").Value = abasic
+ws1.Range("L16").Value = asbns
+ws1.Range("L18").Value = ahra
+ws1.Range("L20").Value = aga
+ws1.Range("L22").Value = asa
+ws1.Range("L24").Value = agross
+ws1.Range("L26").Value = aeepf
+ws1.Range("L28").Value = aeesic
+ws1.Range("L30").Value = aelwf
+ws1.Range("L32").Value = actc
+ws1.Range("L34").Value = aempepf
+ws1.Range("L36").Value = aempesic
+ws1.Range("L38").Value = aemplwf
+ws1.Range("L40").Value = apt
+ws1.Range("L42").Value = anth
+
+
+
+
+End Sub
+
+
