@@ -1,0 +1,99 @@
+Private Sub worksheet_change(ByVal target As Range)
+' To get city feild when State selected is "Kerala"
+
+Dim city As Variant
+city = Array("Ernakulam", "Kollam", "Kottayam", "Kozhikode", "Palakkad", "Thiruvananthapuram", "Thrissur")
+
+
+If target.Address = "$L$7" Then
+    If target.Value = "Kerala" Then
+        Range("I8").Value = "City"
+        Range("L8").Value = "Select City..."
+        With Range("L8").Validation
+            .Delete
+            .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:=Join(city, ",")
+            .IgnoreBlank = True
+            .InCellDropdown = True
+            .InputTitle = ""
+            .ErrorTitle = "Error"
+            .InputMessage = ""
+            .ErrorMessage = "Please Provide a Valid State"
+            .ShowError = True
+            .ShowInput = True
+        End With
+    Else
+        Range("I8").Value = ""
+        Range("L8").Value = ""
+        With Range("L8").Validation
+            .Delete
+        End With
+    End If
+        
+End If
+
+End Sub
+
+Private Sub CommandButton1_Click()
+' Reset Button
+
+Call reset
+
+End Sub
+
+Private Sub CommandButton2_Click()
+' Caculate Button
+Call calculate_salary
+
+
+End Sub
+
+Private Sub OptionButton1_Click()
+
+Dim state, city As Variant
+
+state = Array("Andhra Pradesh", "Chandigarh", "Chhattisgarh", "Delhi", "Gujarat", "Haryana", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Odisha", "Pondicherry", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "Uttarakhand", "West Bengal")
+
+Range("I7").Value = "State"
+Range("L7").Value = "Select State..."
+With Range("L7").Validation
+.Delete
+.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:=Join(state, ",")
+.IgnoreBlank = True
+.InCellDropdown = True
+.InputTitle = ""
+.ErrorTitle = "Error"
+.InputMessage = ""
+.ErrorMessage = "Please Provide a Valid State"
+.ShowError = True
+.ShowInput = True
+End With
+
+End Sub
+
+Private Sub OptionButton2_Click()
+
+Dim location As Variant
+Dim location_range As Range
+
+Set location_range = Sheets("Min Wages").Range("W2:W215")
+
+location = Application.WorksheetFunction.Transpose(location_range)
+
+Range("I7").Value = "Location"
+Range("L7").Value = "Select Location..."
+
+With Range("L7").Validation
+.Delete
+.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:=Join(location, ",")
+.IgnoreBlank = True
+.InCellDropdown = True
+.InputTitle = ""
+.ErrorTitle = "Error"
+.InputMessage = ""
+.ErrorMessage = "Please Provide a Valid State"
+.ShowError = True
+.ShowInput = True
+End With
+
+
+End Sub
