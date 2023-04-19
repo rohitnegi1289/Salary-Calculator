@@ -1,0 +1,15 @@
+Sub reset()
+'Reset Function - to get all values to initial state
+
+Worksheets("Salary Calculator").OptionButton1.Value = False
+Worksheets("Salary Calculator").OptionButton1.Value = True
+Range("I8") = ""
+Range("L8") = ""
+Range("L6") = "Semi-Skilled"
+Range("F7") = "Net Take Home"
+Range("F8") = "Monthly"
+Range("F6") = 0
+Range("I14:L43") = 0
+
+
+End Sub
